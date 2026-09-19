@@ -42,6 +42,11 @@ Both messages come from `llama_verify_hadamard_graph` (visible with `strings lib
 bypass them. The MTP graph reads `token_embd` with a plain `ggml_get_rows`, but the table is stored in the
 rotated (Hadamard-latent) basis, so the draft would consume embeddings in the wrong basis.
 
+**Upstream status**: filed as **PrismML-Eng/llama.cpp#205** (1 file, +14 lines). Verified still broken on the newest
+official release `prism-b10709-9a9394a` (2026-09-18), so it is not a stale-version issue, and the fix is
+semantically exact — draft acceptance after patching is byte-for-byte the same as the community-patched build
+(49/90, 59/71, 57/75).
+
 **The fix** is to apply the inverse transform (rotation matrix + the explicit per-weight signs) to that lookup.
 See `patches/README.md` — the upstream-quality version of this fix is
 `runtime/bonsai-mtp-embedding.patch` in [`ProCreations/Ternary-Bonsai-2-27B-MTP`](https://huggingface.co/ProCreations/Ternary-Bonsai-2-27B-MTP),
@@ -192,6 +197,8 @@ but diverges in practice on rare ties). Treat the numbers above as single-machin
 ## Links
 
 * raw data + charts, hosted as a dataset: <https://huggingface.co/datasets/zhaokeqi/bonsai2-27b-mtp-repro>
+* **upstream pull request (the fix): <https://github.com/PrismML-Eng/llama.cpp/pull/205>**
+* supporting measurements on two related open issues: [#203](https://github.com/PrismML-Eng/llama.cpp/issues/203#issuecomment-5740120220) (`ngram-*` silent no-op) and [#85](https://github.com/PrismML-Eng/llama.cpp/issues/85#issuecomment-5740120304) (`q4_0` K-cache at 262k on a 16 GB card)
 * upstream discussion (official model repo): <https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/discussions/23>
 * drafter repo discussion: <https://huggingface.co/ProCreations/Ternary-Bonsai-2-27B-MTP/discussions/2>
 * Chinese write-up of the same work: `docs/findings-zh.md`
