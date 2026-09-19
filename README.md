@@ -148,7 +148,42 @@ conversation does not repay prefill; switching conversations does, because `-np 
 `common_fit_params: failed to fit params to free device memory` appears in the q4_0 state too, and performance is
 fine — so that warning is **not** the signal. KV cache bytes are.
 
-## 7. What was NOT measured
+## 7. Long-context behaviour
+
+Measured through the **chat path** (the way an agent actually uses a long context) on natural text
+(wikitext-2, `scripts/depth_sweep.py`), `max_tokens=256`, temp 0, `-c 262144` + KV q4_0.
+Depths are exact token counts from `POST /tokenize`. Paired arms, same prompts:
+
+| depth (tokens) | prefill t/s (MTP) | decode t/s (MTP) | acceptance | decode t/s (no spec) | MTP speedup |
+|---:|---:|---:|---:|---:|---:|
+| 8,020 | 1855 | **86.9** | 65.8% | 63.0 | 1.38x |
+| 31,939 | 1674 | **62.4** | 52.2% | 53.7 | 1.16x |
+| 64,084 | 1332 | **55.4** | 67.9% | 43.4 | 1.28x |
+| 127,870 | 974 | **46.1** | 82.3% | 33.3 | 1.38x |
+| 191,099 | 722 | **35.0** | 84.1% | 26.5 | 1.32x |
+| ~200 (short context, 12-prompt A/B) | — | ~90 | 68.1% | ~67 | 1.34x |
+
+Two things worth taking away:
+
+* **decode falls hard with depth** — 87 t/s at 8k to 35 t/s at 191k with MTP (63 -> 26.5 t/s without).
+  That is the KV cache traffic, and it dominates long-context interactivity far more than the packing format.
+* **MTP does not degrade with depth; if anything it improves** (1.16x -> 1.38x). Acceptance *rises* at depth
+  (66% -> 84%): with a long natural-text context the continuation is more constrained, while the draft's own
+  cost stays roughly flat, so speculation buys more where the target is slowest.
+
+Cold prefill for the full 191k prompt costs ~198 s with MTP (sum of the incremental stages), i.e. ~965 t/s
+average; ~185 s without (~1035 t/s).
+
+### Measurement gotcha: `prompt_n` is the delta, not the depth
+
+`timings.prompt_n` on a long-context request reports only the **newly evaluated** tokens, because llama-server
+keeps context checkpoints and reuses the cached prefix of the previous request. A 191k-token prompt can therefore
+report `prompt_n = 63745`. The server is *not* truncating (its log shows `n_tokens = 191139, truncated = 0`) —
+the full prompt is in the KV cache; only the delta was computed. If you need the true length, ask `POST /tokenize`,
+or sum the incremental `prompt_ms` across a cumulative ladder as done above. Interleaving a short "cache buster"
+request does **not** evict the checkpoints.
+
+## 8. What was NOT measured
 
 The official 14-benchmark suite; repeats per prompt (each prompt ran once); contexts beyond 262,144; CPU-only runs;
 a DFlash2 head comparison on the same card; temperature > 0 (speculation is output-identical at temp 0 in principle,
