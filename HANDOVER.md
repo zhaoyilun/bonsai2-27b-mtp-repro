@@ -203,24 +203,41 @@ Metal 预编译包 —— 但要注意：
 * 内网 IP **没有**公开（已按要求核查：公开物里搜不到 `192.168.`）。
 * 想彻底消掉：**轮换 key**（最简单，改三处）或 `git filter-repo` 重写历史 + 删掉 HF 数据集重建（麻烦、收益小）。
 
-### ② 真正要紧的：退货 = 磁盘连同凭证一起交出去
+### ② 已确认：只退 CPU，磁盘留下 —— 这条泄露风险解除
 
-这台机器上（会被商家拿到）：
+> 2026-09-19 用户确认：**只把 CPU 寄回**（RMA 换新），整机磁盘留在手上。
 
-| 文件 | 内容 | 风险 |
-|---|---|---|
-| `~/.dsh/federation/device.json` | **联邦设备令牌 + ed25519 私钥** | 可冒充这台设备连 `wss://dsh-mqtt.fljx.top/mqtt` |
-| `~/.dsh/federation/host-access.json` | 本机访问令牌 | 同上 |
-| `~/.dsh/.credentials.yaml` | DSH 的 provider 凭证 | 账号相关 |
-| `~/.ssh/id_ed25519` | SSH 私钥 | 任何用了这把公钥的地方 |
-| `C:\Users\zhaoy\.cache\huggingface\token` | HF 令牌 | 可写你的数据集/讨论 |
-| gh 登录态（Windows 凭据管理器）| GitHub OAuth token（`repo, workflow`）| 可写你的仓库 |
+那么之前担心的"凭证随磁盘交给商家"**不成立**：SSH 私钥、HF/gh 令牌、DSH 联邦设备令牌与私钥、
+模型与研究仓库全部留在本机。**而 CPU 本体不存用户数据** —— 缓存/寄存器断电即失，CPU 内没有持久化的
+用户存储；固件 TPM 里即使封了密钥，也不是 RMA 商家会去提取的东西（那是实验室级攻击，对一次消费级
+换新毫无价值）。**结论：这次寄 CPU 的风险 ≈ 0。**
 
-**建议（按优先级）**：
-1. 退货前**擦盘 / 系统重置**（或按 RMA 政策把硬盘留下）—— 这是唯一能一次性解决的办法；
-2. 在 DSH 侧**撤销这台设备**（registry 里置 `revoked`），并轮换上面所有令牌；
-3. `gh auth logout`、删掉 HF token 文件、**轮换 SSH key**（旧公钥从各处移除）；
-4. 确认路由器上 8080 没有端口映射（顺带把广播型服务也检查一下）。
+### ②-bis 但换 CPU 有一条"你自己会被锁在外面"的风险：fTPM / BitLocker
+
+这不是泄露，是**可用性**问题，而且必须**在拆机前**处理：
+
+* 如果 C: 盘开了 BitLocker / Windows 设备加密，而密钥封在 **CPU 的固件 TPM（Intel PTT / AMD fTPM）** 里，
+  换 CPU 可能让 TPM 的存储根密钥失效 → 开机要求 **48 位恢复密钥**，没有就进不去系统。
+* 另外预期：Windows Hello（PIN/指纹）需重新录入；DPAPI 保护的已保存密码可能失效（gh/HF/浏览器要重新登录）；
+  Windows 可能需要重新激活。
+
+**拆机前请用管理员 PowerShell 做两件事**（我这里没有管理员权限，查不到，只能给你命令）：
+
+```powershell
+manage-bde -status C:                 # 看 Protection Status / 是否 On
+manage-bde -protectors -get C:        # 取出恢复密钥（以及 -adbackup 备份到 AD/AAD 的选项）
+Get-Tpm | Format-List                 # 看是否 TpmPresent/TpmReady
+```
+
+* 若已加密：**把 48 位恢复密钥抄下来存到手机/密码管理器**，或临时挂起：
+  `manage-bde -protectors -disable C: -rebootcount 2`（换完 CPU 启两次后自动恢复保护）。
+* 若没加密：这条可以跳过。
+
+### ②-ter 顺带的可用性提醒
+
+机器拆开待件期间会离线 → DSH 与 `llama-bonsai-mtp` 端点都会停；如果你依赖 GUI 里的本地模型，
+这段时间在 Mac 侧改用云端 provider 即可。另外 CPU 已经缩缸、随时可能更不稳，
+**§1① 那两个备份（尤其已发到 Mac 的 bundle）就是这时的保险**。
 
 ### ③ 会话历史里有明文凭证 —— 别原样往云上传
 
