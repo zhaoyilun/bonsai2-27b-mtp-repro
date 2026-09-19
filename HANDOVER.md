@@ -212,26 +212,24 @@ Metal 预编译包 —— 但要注意：
 用户存储；固件 TPM 里即使封了密钥，也不是 RMA 商家会去提取的东西（那是实验室级攻击，对一次消费级
 换新毫无价值）。**结论：这次寄 CPU 的风险 ≈ 0。**
 
-### ②-bis 但换 CPU 有一条"你自己会被锁在外面"的风险：fTPM / BitLocker
+### ②-bis 换 CPU 会不会被锁在系统外？—— **已实测：不会**
 
-这不是泄露，是**可用性**问题，而且必须**在拆机前**处理：
+> 2026-09-19 用管理员权限实测（`Win32_EncryptableVolume` + `Win32_Tpm`）：
 
-* 如果 C: 盘开了 BitLocker / Windows 设备加密，而密钥封在 **CPU 的固件 TPM（Intel PTT / AMD fTPM）** 里，
-  换 CPU 可能让 TPM 的存储根密钥失效 → 开机要求 **48 位恢复密钥**，没有就进不去系统。
-* 另外预期：Windows Hello（PIN/指纹）需重新录入；DPAPI 保护的已保存密码可能失效（gh/HF/浏览器要重新登录）；
-  Windows 可能需要重新激活。
-
-**拆机前请用管理员 PowerShell 做两件事**（我这里没有管理员权限，查不到，只能给你命令）：
-
-```powershell
-manage-bde -status C:                 # 看 Protection Status / 是否 On
-manage-bde -protectors -get C:        # 取出恢复密钥（以及 -adbackup 备份到 AD/AAD 的选项）
-Get-Tpm | Format-List                 # 看是否 TpmPresent/TpmReady
+```
+C: / D: / E:   ProtectionStatus=0 (Off)   ConversionStatus=0 (FullyDecrypted)   EncryptionMethod=0 (None)
+TPM            IsEnabled=True  IsActivated=True  Spec=2.0  Manufacturer=INTC (Intel 固件 TPM)
 ```
 
-* 若已加密：**把 48 位恢复密钥抄下来存到手机/密码管理器**，或临时挂起：
-  `manage-bde -protectors -disable C: -rebootcount 2`（换完 CPU 启两次后自动恢复保护）。
-* 若没加密：这条可以跳过。
+**三个卷全部未加密 ⇒ 换 CPU 不会触发 BitLocker 恢复密钥，不存在把自己锁在外面的风险。**
+（`manage-bde -status C:` 自己再确认一次也行，但结论已经清楚。）
+
+TPM 虽然是启用状态（Intel fTPM 2.0），但在 BitLocker 关闭时它不保护磁盘；换 CPU 后可能的**小麻烦**
+（不是风险，重做即可）：
+
+* Windows Hello 的 PIN / 指纹**可能要重新录入**（TPM 封装的凭据）；
+* 凭据管理器/DPAPI 里存的密码**可能失效** → gh、HF、浏览器重新登录一次（凭据你手上都有）；
+* Windows 可能提示重新激活（数字许可证，通常自动恢复）。
 
 ### ②-ter 顺带的可用性提醒
 
