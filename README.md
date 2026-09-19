@@ -188,7 +188,25 @@ the full prompt is in the KV cache; only the delta was computed. If you need the
 or sum the incremental `prompt_ms` across a cumulative ladder as done above. Interleaving a short "cache buster"
 request does **not** evict the checkpoints.
 
-## 8. What was NOT measured
+## 8. Independent verification (third party)
+
+The bug and the fix were reproduced on entirely different hardware — **RDNA3 / ROCm 6.4 / Windows 11** — contributed
+on [PR #205](https://github.com/PrismML-Eng/llama.cpp/pull/205#issuecomment-5742011541):
+
+| platform | no spec | with MTP | speedup | acceptance |
+|---|---:|---:|---:|---:|
+| RX 7900 XTX, gfx1100, ROCm 6.4, Win11 | 41.6 t/s | 75.9 cold / 73.1 warm | **1.76–1.82x** | 0.82 |
+| RTX 4080 SUPER, sm_89, CUDA 13.3 (this repo) | ~67 t/s | ~90 | 1.34x | 0.68 |
+
+Identical failure line without the patch (`latent lookup 'mtp_tok_embd-64' consumed by op=RMS_NORM name='norm-64'`),
+identical outcome with it, and the same `--spec-draft-n-max` behaviour (4 slower than 2 there; 2 and 3 a wash here).
+
+The two speedups look inconsistent as multiples but are consistent once the **no-spec baselines** are compared:
+speculation pays more where the target decodes slower, because the draft's roughly fixed per-round cost is then a
+smaller fraction of a round. The long-context sweep shows the same effect along the depth axis — decode falls
+87 -> 35 t/s while acceptance *rises* 66% -> 84%.
+
+## 9. What was NOT measured
 
 The official 14-benchmark suite; repeats per prompt (each prompt ran once); contexts beyond 262,144; CPU-only runs;
 a DFlash2 head comparison on the same card; temperature > 0 (speculation is output-identical at temp 0 in principle,
