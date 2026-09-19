@@ -1,0 +1,5 @@
+runtime-src/
+*.gguf
+longtext.txt
+__pycache__/
+*.pyc

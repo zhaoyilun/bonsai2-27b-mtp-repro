@@ -1,0 +1,28 @@
+# NOTICE
+
+This repository contains **scripts, documentation and measurements only**. It does **not** redistribute any
+model weights, any drafter GGUF, or any runtime source/binary.
+
+## Components used and their provenance
+
+| component | source | license |
+|---|---|---|
+| target model `Ternary-Bonsai-2-27B-PQ2_0` | [`prism-ml/Ternary-Bonsai-2-27B-gguf`](https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf) | Apache-2.0 |
+| MTP head + bundle `Ternary-Bonsai-2-27B-PQ2_0-MTP-Q8_0.gguf` | [`ProCreations/Ternary-Bonsai-2-27B-MTP`](https://huggingface.co/ProCreations/Ternary-Bonsai-2-27B-MTP) | Apache-2.0 (per their card) |
+| patched runtime source + `bonsai-mtp-embedding.patch` | same repo, `runtime/prism-dflash2-source.tar.gz` | llama.cpp is MIT; the fork's own notices apply |
+| llama.cpp | <https://github.com/ggml-org/llama.cpp> | MIT |
+| PrismML fork | <https://github.com/PrismML-Eng/llama.cpp> | MIT (fork of the above) |
+
+The `patches/README.md` snippet is quoted **for documentation only**; the authoritative patch lives in the
+drafter repository listed above and is credited to its authors. Measurements, scripts and write-ups in this
+repository are independent work.
+
+## Data
+
+`results/*.json` are raw server responses (trimmed to the fields used) collected on the machine described in the
+top-level README. `results/chart_*.png` are rendered from those JSON files by the harness in `scripts/`.
+
+## Reproducibility caveats
+
+Single machine, single run per prompt, one GPU (RTX 4080 SUPER, 16 GB, Ada SM89), WSL2, CUDA 13.3. Numbers are
+not official benchmarks and should not be compared against the model card's own (H100 / EvalScope) results.
