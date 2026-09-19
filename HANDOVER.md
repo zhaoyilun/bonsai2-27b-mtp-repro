@@ -186,3 +186,50 @@ Metal 预编译包 —— 但要注意：
 2. **`-spec-draft-n-max` 扫参**（2/3/4）与 DFlash2 头在 Ada 上的对比。
 3. 把 `gf` 边界补偿写进展开管线的导出（老账，见 `results/mtp_sidecar.md` §6）。
 4. 多 prompt 多次重复取均值（目前每 prompt 单次）。
+
+---
+
+## 9. 安全审计：泄露了什么、实际风险多大
+
+**一句话结论：GitHub 上那个 key 的实际攻击面很低；真正要处理的是"这台机器要退给商家"而磁盘上有一整套凭证。**
+
+### ① 公开的只有 LAN API key（其余都没公开）
+
+* 它在**公开 git 历史**里（`e65af53` … `b9d6e7f`）—— 下架最新版 ≠ 删除历史：任何人都能
+  `git show e65af53:systemd/llama-bonsai-mtp.service` 读出原文；HF 数据集的旧 revision 同理保留。
+* **它能做什么**：只能从**同一局域网内**访问 `http://192.168.3.40:8080`（llama-server 的 HTTP API）。
+  没有工具执行、没有文件读写、没有通向宿主机的路径；最坏情况是别人白用你的 GPU、或读写 `/slots` 的槽状态。
+* **前提是 8080 没有做端口映射**（relay 只隧穿了 `8128 → 3080`，即 DSH Web，不含 8080）—— 建议在路由器上确认一次。
+* 内网 IP **没有**公开（已按要求核查：公开物里搜不到 `192.168.`）。
+* 想彻底消掉：**轮换 key**（最简单，改三处）或 `git filter-repo` 重写历史 + 删掉 HF 数据集重建（麻烦、收益小）。
+
+### ② 真正要紧的：退货 = 磁盘连同凭证一起交出去
+
+这台机器上（会被商家拿到）：
+
+| 文件 | 内容 | 风险 |
+|---|---|---|
+| `~/.dsh/federation/device.json` | **联邦设备令牌 + ed25519 私钥** | 可冒充这台设备连 `wss://dsh-mqtt.fljx.top/mqtt` |
+| `~/.dsh/federation/host-access.json` | 本机访问令牌 | 同上 |
+| `~/.dsh/.credentials.yaml` | DSH 的 provider 凭证 | 账号相关 |
+| `~/.ssh/id_ed25519` | SSH 私钥 | 任何用了这把公钥的地方 |
+| `C:\Users\zhaoy\.cache\huggingface\token` | HF 令牌 | 可写你的数据集/讨论 |
+| gh 登录态（Windows 凭据管理器）| GitHub OAuth token（`repo, workflow`）| 可写你的仓库 |
+
+**建议（按优先级）**：
+1. 退货前**擦盘 / 系统重置**（或按 RMA 政策把硬盘留下）—— 这是唯一能一次性解决的办法；
+2. 在 DSH 侧**撤销这台设备**（registry 里置 `revoked`），并轮换上面所有令牌；
+3. `gh auth logout`、删掉 HF token 文件、**轮换 SSH key**（旧公钥从各处移除）；
+4. 确认路由器上 8080 没有端口映射（顺带把广播型服务也检查一下）。
+
+### ③ 会话历史里有明文凭证 —— 别原样往云上传
+
+这次会话里我打印过**联邦设备令牌、ed25519 私钥、host-access 令牌、LAN key**，它们会落进
+`~/.dsh/sessions/`（100 MB）。所以 §1③ 那条"值得带走"要加前提：**它含密钥，属于机密文件** ——
+要么别拷，要么加密保管，别丢进公共网盘。
+
+（好消息：HF token 和 gh token 我**只打印过长度/前缀**，明文没有落进会话记录。）
+
+### ④ 顺带修正 §1③ 的建议
+
+`~/.dsh/sessions/` 与 `~/.dsh/federation/*` **不要**当普通资料带走；真要留，按密钥对待。
