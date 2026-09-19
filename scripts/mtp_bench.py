@@ -7,7 +7,7 @@ TAG  = sys.argv[2] if len(sys.argv) > 2 else "run"
 NP   = int(sys.argv[3]) if len(sys.argv) > 3 else 96
 URL  = f"http://127.0.0.1:{PORT}/completion"
 H    = {"Content-Type": "application/json",
-        "Authorization": "Bearer sk-lan-97f1c41bb1642ab23f810c65"}
+        "Authorization": "Bearer sk-lan-CHANGE-ME"}
 
 PROMPTS = {
   "V(reasoning)": ("Quantum computing exploits superposition and entanglement to perform "

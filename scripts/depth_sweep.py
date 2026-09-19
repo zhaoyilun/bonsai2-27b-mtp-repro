@@ -4,7 +4,7 @@ import json, sys, time, urllib.request
 
 TAG = sys.argv[1]; NP = int(sys.argv[2]) if len(sys.argv) > 2 else 64
 URL = "http://127.0.0.1:8080/completion"
-H = {"Content-Type": "application/json", "Authorization": "Bearer sk-lan-97f1c41bb1642ab23f810c65"}
+H = {"Content-Type": "application/json", "Authorization": "Bearer sk-lan-CHANGE-ME"}
 TEXT = open("/mnt/e/AI/ternary-expand/tmp-models/longtext.txt", encoding="utf-8").read()
 POINTS = [("0.2k", 800), ("8k", 32000), ("32k", 128000), ("64k", 256000), ("128k", 512000), ("192k", 780000)]
 

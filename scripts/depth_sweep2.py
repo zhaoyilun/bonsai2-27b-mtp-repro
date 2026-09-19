@@ -3,7 +3,7 @@
 import json, sys, time, urllib.request
 TAG = sys.argv[1]; NP = int(sys.argv[2]) if len(sys.argv) > 2 else 256
 URL = "http://127.0.0.1:8080/v1/chat/completions"
-H = {"Content-Type": "application/json", "Authorization": "Bearer sk-lan-97f1c41bb1642ab23f810c65"}
+H = {"Content-Type": "application/json", "Authorization": "Bearer sk-lan-CHANGE-ME"}
 TEXT = open("/mnt/e/AI/ternary-expand/tmp-models/longtext.txt", encoding="utf-8").read()
 Q = "\n\nQuestion: in one sentence, what is the single most important idea in the text above?"
 POINTS = [("~0.2k", 800), ("~8k", 33000), ("~32k", 132000), ("~64k", 265000), ("~128k", 530000), ("~192k", 795000)]

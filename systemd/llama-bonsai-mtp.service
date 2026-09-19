@@ -15,7 +15,7 @@ ExecStart=/home/zyl/bonsai2/mtp-runtime/source/llama/build/bin/llama-server \
   --spec-type draft-mtp --spec-draft-n-max 2 \
   --temp 1.0 --top-p 0.95 --top-k 20 \
   --host 0.0.0.0 --port 8080 \
-  --api-key sk-lan-97f1c41bb1642ab23f810c65 \
+  --api-key sk-lan-CHANGE-ME \
   -a bonsai-27b
 Restart=on-failure
 RestartSec=10

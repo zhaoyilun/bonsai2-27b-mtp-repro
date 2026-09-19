@@ -3,7 +3,7 @@
 import json, sys, time, urllib.request
 TAG = sys.argv[1]; NP = int(sys.argv[2]) if len(sys.argv) > 2 else 256
 BASE = "http://127.0.0.1:8080"
-H = {"Content-Type": "application/json", "Authorization": "Bearer sk-lan-97f1c41bb1642ab23f810c65"}
+H = {"Content-Type": "application/json", "Authorization": "Bearer sk-lan-CHANGE-ME"}
 TEXT = open("/mnt/e/AI/ternary-expand/tmp-models/longtext.txt", encoding="utf-8").read()
 Q = "\n\nQuestion: in one sentence, what is the single most important idea in the text above?"
 TARGETS = [8000, 32000, 64000, 128000, 192000]

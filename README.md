@@ -77,6 +77,11 @@ Verified build: 484 targets, 32 cores, ~9 minutes, `llama-server --version` -> `
 
 ## 3. Run it
 
+> **Before running the units/scripts**: they carry the placeholder `sk-lan-CHANGE-ME` — replace it with your own
+> API key (or pass no key at all on a private interface). An earlier revision of this repository contained a real
+> LAN key by accident; it has been redacted, but **if you are the machine's owner, rotate it** — it was public for
+> a few hours.
+
 ```bash
 llama-server -m Ternary-Bonsai-2-27B-PQ2_0-MTP-Q8_0.gguf \
   -c 262144 -ctk q4_0 -ctv q4_0 \

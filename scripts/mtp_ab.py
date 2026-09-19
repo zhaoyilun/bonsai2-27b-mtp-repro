@@ -4,7 +4,7 @@ import json, sys, time, urllib.request, statistics
 
 PORT = int(sys.argv[1]); TAG = sys.argv[2]; NP = int(sys.argv[3]) if len(sys.argv) > 3 else 128
 URL = f"http://127.0.0.1:{PORT}/completion"
-H = {"Content-Type":"application/json","Authorization":"Bearer sk-lan-97f1c41bb1642ab23f810c65"}
+H = {"Content-Type":"application/json","Authorization":"Bearer sk-lan-CHANGE-ME"}
 
 P = {
  "R1 reasoning": "Quantum computing exploits superposition and entanglement to perform computations that are intractable for classical machines. The principal obstacle in practice is decoherence, which",
